@@ -12,13 +12,15 @@ import {
 } from "@/platform/adapters"
 import type { ModelInfo, ProviderDefinition } from "@/platform/providers"
 import { askQuestionToolArgs } from "@/platform/ask-question"
-import { toolByName } from "@/platform/tools"
+import { toolByName, type IntegrationContext } from "@/platform/tools"
 
 export type ChatTurnResult = {
   text: string
   reasoning: string
   displayBlocks: string[]
   pendingAsk?: { toolId: string; input: string }
+  /** A write tool the model asked for; the user has to approve it first. */
+  pendingApproval?: { toolId: string; name: string; input: string }
   usage?: { inputTokens?: number; outputTokens?: number }
   aborted: boolean
   error?: string
@@ -41,6 +43,10 @@ export type ChatEngineParams = {
   system: string
   turns: ChatTurn[]
   toolSpecs?: ToolSpec[]
+  /** Connected services and the ones the user attached to this message. */
+  integrations?: IntegrationContext
+  /** Tool names the user already approved for this turn. */
+  approvedTools?: string[]
   signal: AbortSignal
   hooks: ChatEngineHooks
 }
@@ -178,8 +184,9 @@ export async function runAssistantTurn(params: ChatEngineParams): Promise<ChatTu
           continue
         }
 
-        if (!tool.available(params.appSettings)) {
-          const reason = tool.unavailableReason?.(params.appSettings) ?? "Tool is disabled."
+        const environment = { settings: params.appSettings, integrations: params.integrations }
+        if (!tool.available(environment)) {
+          const reason = tool.unavailableReason?.(environment) ?? "Tool is disabled."
           turns.push({ role: "tool", toolCallId: call.id, name: call.name, content: reason })
           hooks.onTool(toolFromCall(call, "error"))
           hooks.onTool({
@@ -193,10 +200,26 @@ export async function runAssistantTurn(params: ChatEngineParams): Promise<ChatTu
           continue
         }
 
+        // Writes stop here and go back to the UI for an explicit approval. The
+        // model never sees a write execute because it asked nicely.
+        const approved = params.approvedTools?.includes(call.name) ?? false
+        if (tool.requiresConfirmation && params.appSettings.requireToolConsent && !approved) {
+          hooks.onTool({ ...toolFromCall(call, "running"), output: "Waiting for your approval…" })
+          return {
+            text,
+            reasoning,
+            displayBlocks,
+            usage,
+            aborted: false,
+            pendingApproval: { toolId: call.id, name: call.name, input: call.arguments || "{}" },
+          }
+        }
+
         hooks.onTool(toolFromCall(call, "running"))
         hooks.onStage(call.name === "web_search" ? "searching" : "thinking")
         const result = await tool.execute(args, {
           settings: params.appSettings,
+          integrations: params.integrations,
           signal,
         })
         hooks.onTool({

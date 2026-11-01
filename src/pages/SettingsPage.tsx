@@ -36,6 +36,8 @@ import { toolRegistryForDisplay } from "@/platform/tools"
 import { usePlatform } from "@/store/platform"
 import { useSession } from "@/store/session"
 import { useT } from "@/i18n"
+import { listIntegrations } from "@/lib/db"
+import { useLiveQuery } from "dexie-react-hooks"
 
 export default function SettingsPage() {
   const { t } = useT()
@@ -51,6 +53,21 @@ export default function SettingsPage() {
   const [busy, setBusy] = React.useState(false)
   const [estimate, setEstimate] = React.useState<{ usage: number; quota: number } | null>(null)
   const [deleteOpen, setDeleteOpen] = React.useState(false)
+  const githubToken = useLiveQuery(
+    () =>
+      (user
+        ? (async () => {
+            const records = await listIntegrations(user.uid)
+            const github = records.find(
+              (record) => record.serviceId === "github" && record.status === "connected" && record.token
+            )
+            return github?.token ?? null
+          })()
+        : Promise.resolve(null)),
+    [user?.uid],
+    null as string | null
+  )
+
   const fileRef = React.useRef<HTMLInputElement>(null)
 
   React.useEffect(() => {
@@ -93,7 +110,10 @@ export default function SettingsPage() {
     }
   }
 
-  const tools = toolRegistryForDisplay(settings)
+  const tools = toolRegistryForDisplay({
+    settings,
+    integrations: { github: githubToken ? { token: githubToken } : undefined },
+  })
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -379,126 +399,4 @@ export default function SettingsPage() {
                   <p className="text-muted-foreground">
                     {t("settings.storageQuota")}: {formatBytes(estimate.quota)}
                   </p>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{
-                        width: `${Math.min(100, Math.round((estimate.usage / Math.max(estimate.quota, 1)) * 100))}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <p className="text-[12px] text-muted-foreground">
-                  This browser does not expose a storage estimate.
-                </p>
-              )}
-              <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-                Clearing browser data or losing this device deletes everything below unless you have a
-                backup. Large files are stored in OPFS when the browser supports it, other records in
-                IndexedDB.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3 h-8 gap-1.5 text-[12px]"
-                onClick={() => void storageEstimate().then(setEstimate)}
-              >
-                {t("common.refresh")}
-              </Button>
-            </section>
-
-            <section className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-              <h2 className="text-[13px] font-medium text-destructive">{t("settings.deleteAll")}</h2>
-              <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground">
-                {t("settings.deleteAllWarning")}
-              </p>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="mt-3 h-8 gap-1.5 text-[12px]"
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash2 className="size-3.5" />
-                {t("settings.deleteAll")}
-              </Button>
-            </section>
-          </TabsContent>
-
-          <TabsContent value="backup" className="space-y-4">
-            <section className="rounded-lg border bg-card p-4">
-              <h2 className="mb-2 text-[13px] font-medium">{t("settings.export")}</h2>
-              <div className="space-y-2.5">
-                <label className="flex items-center justify-between gap-4 text-[12px]">
-                  <span>
-                    {t("settings.includeKeys")}
-                    <span className="block text-[10.5px] text-muted-foreground">
-                      {t("settings.includeKeysWarning")}
-                    </span>
-                  </span>
-                  <Switch checked={includeKeys} onCheckedChange={setIncludeKeys} />
-                </label>
-                <label className="flex items-center justify-between gap-4 text-[12px]">
-                  <span>Include library files (base64)</span>
-                  <Switch checked={includeFiles} onCheckedChange={setIncludeFiles} />
-                </label>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <Button size="sm" className="h-8 gap-1.5" disabled={busy} onClick={() => void exportBackup()}>
-                    <Download className="size-3.5" />
-                    {t("settings.export")}
-                  </Button>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="application/json"
-                    className="sr-only"
-                    onChange={(event) => void importFromFile(event.target.files?.[0])}
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 gap-1.5"
-                    disabled={busy}
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    <Upload className="size-3.5" />
-                    {t("settings.import")}
-                  </Button>
-                </div>
-              </div>
-            </section>
-            <p className="text-[11px] text-muted-foreground">
-              Backups are plain JSON. Import merges into the signed-in profile and keeps other profiles
-              untouched.
-            </p>
-          </TabsContent>
-        </Tabs>
-      </PageBody>
-
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("settings.deleteAll")}</AlertDialogTitle>
-            <AlertDialogDescription className="text-[12.5px]">
-              {t("settings.deleteAllWarning")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                void wipeUserData(user.uid).then(async () => {
-                  await load(user.uid)
-                  toast.success(t("settings.resetDone"))
-                  navigate("/")
-                })
-              }}
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  )
-}
+                  <di

@@ -73,6 +73,10 @@ function ProtectedShell() {
   return <AppShell />
 }
 
+// Vite injects BASE_URL with a trailing slash ("/my/"); React Router wants
+// "/my", and an empty string for a root deployment.
+const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, "")
+
 export default function App() {
   const init = useSession((state) => state.init)
   React.useEffect(() => init(), [init])
@@ -80,7 +84,7 @@ export default function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
       <TooltipProvider delayDuration={200}>
-      <BrowserRouter>
+      <BrowserRouter basename={routerBasename}>
         <React.Suspense fallback={<FullScreenSpinner />}>
           <Routes>
             <Route path="/login" element={<AuthPage mode="login" />} />

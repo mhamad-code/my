@@ -210,15 +210,23 @@ export function ModelPicker({
           side={side}
           align="start"
           sideOffset={8}
-          collisionPadding={12}
-          className="w-[min(15rem,calc((100vw-1.5rem)/var(--ui-scale,1)))]"
+          avoidCollisions
+          collisionPadding={8}
+          className="w-[min(15rem,calc((100vw-1rem)/var(--ui-scale,1)))]"
         >
           <DropdownMenuSub>
             <SectionTrigger label={label} value={current?.name ?? placeholder} />
             <DropdownMenuSubContent
               data-slot="model-picker-list"
-              collisionPadding={12}
-              className="w-[min(17rem,calc((100vw-1.5rem)/var(--ui-scale,1)))] p-0"
+              // Radix leaves submenu collision handling off by default: the panel
+              // then opens past the viewport edge on phones and in RTL. Flip it
+              // back over the trigger, keep it inside the padding, and scroll
+              // inside instead of growing past the screen.
+              avoidCollisions
+              collisionPadding={8}
+              sideOffset={6}
+              alignOffset={-4}
+              className="max-h-[min(22rem,60dvh)] w-[min(17rem,calc((100vw-1rem)/var(--ui-scale,1)))] overflow-y-auto overscroll-contain p-0"
             >
               {modelList}
             </DropdownMenuSubContent>
@@ -231,8 +239,11 @@ export function ModelPicker({
             />
             <DropdownMenuSubContent
               data-slot="model-picker-effort"
-              collisionPadding={12}
-              className="w-[min(13rem,calc((100vw-1.5rem)/var(--ui-scale,1)))]"
+              avoidCollisions
+              collisionPadding={8}
+              sideOffset={6}
+              alignOffset={-4}
+              className="max-h-[min(18rem,50dvh)] w-[min(13rem,calc((100vw-1rem)/var(--ui-scale,1)))] overflow-y-auto overscroll-contain"
             >
               {effortOptions?.map((option) => (
                 <DropdownMenuItem
@@ -259,8 +270,9 @@ export function ModelPicker({
           side={side}
           align="start"
           sideOffset={8}
-          collisionPadding={12}
-          className="w-[min(17rem,calc((100vw-1.5rem)/var(--ui-scale,1)))] p-0"
+          avoidCollisions
+          collisionPadding={8}
+          className="w-[min(17rem,calc((100vw-1rem)/var(--ui-scale,1)))] p-0"
         >
           <div data-slot="model-picker-list">{modelList}</div>
         </DropdownMenuContent>

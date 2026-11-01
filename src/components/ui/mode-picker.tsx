@@ -72,7 +72,7 @@ export function ModePicker({
   const selectedId = value ?? internal
   const current =
     modes.find((m) => m.id === selectedId) ?? modes[0]
-  const fallbackIcon = CHAT_MODES.find((mode) => mode.id === current?.id)?.icon ?? Bot
+  const fallbackIcon = CHAT_MODES.find((option) => option.id === current?.id)?.icon ?? Bot
   const Icon = current?.icon ?? fallbackIcon
 
   const pick = React.useCallback(

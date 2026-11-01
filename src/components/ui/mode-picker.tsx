@@ -110,8 +110,9 @@ export function ModePicker({
         side={side}
         align="start"
         sideOffset={8}
-        collisionPadding={12}
-        className="w-[min(16rem,calc((100vw-1.5rem)/var(--ui-scale,1)))]"
+        avoidCollisions
+        collisionPadding={8}
+        className="max-h-[min(24rem,70dvh)] w-[min(16rem,calc((100vw-1rem)/var(--ui-scale,1)))] overflow-y-auto overscroll-contain"
       >
         <DropdownMenuLabel className="px-2 pt-1.5 pb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
           {label}

@@ -110,16 +110,40 @@ export type UsageRecord = {
   createdAt: number
 }
 
+export type IntegrationStatus =
+  | "connected"
+  | "connecting"
+  | "error"
+  | "expired"
+  | "permission"
+  | "disabled"
+
 export type IntegrationRecord = {
   id: string
   userId: string
   serviceId: string
-  status: "connected" | "error"
+  status: IntegrationStatus
   accountLabel?: string
   /** Only stored for browser-verifiable token integrations (e.g. GitHub PAT). */
   token?: string
   connectedAt: number
   lastCheckedAt?: number
+  /** Why the last check failed, in the words shown to the user. */
+  lastError?: string
+  /** GitHub account the token belongs to, refreshed on every successful check. */
+  account?: {
+    login: string
+    name?: string | null
+    avatarUrl?: string
+    htmlUrl?: string
+    type?: string
+    publicRepos?: number
+  }
+  /** `fine-grained` tokens report permissions, classic ones report scopes. */
+  tokenType?: "classic" | "fine-grained" | "unknown"
+  scopes?: string[]
+  /** ISO expiry from GitHub, when the token carries one. */
+  expiresAt?: string | null
 }
 
 export type ModelSettings = {

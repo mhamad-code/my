@@ -7,6 +7,7 @@ import {
   VolumeX,
 } from "lucide-react"
 import * as React from "react"
+import { useLiveQuery } from "dexie-react-hooks"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -41,6 +42,7 @@ import {
 import type { MessagePart } from "@/components/ui/message"
 import type { MessageAttachmentData, MessageToolCallData } from "@/components/ui/message-parts"
 import { CHAT_PATTERN_HANDLERS, MarkdownImageLightbox } from "@/components/chat/media"
+import { IntegrationChips, IntegrationPicker } from "@/components/chat/integration-picker"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
@@ -49,6 +51,8 @@ import { getProvider, CAPABILITY_LABELS, type ModelInfo } from "@/platform/provi
 import {
   availableToolSpecs,
   ASK_QUESTION_SPEC,
+  toolByName,
+  type IntegrationContext,
 } from "@/platform/tools"
 import {
   buildSystemPrompt,
@@ -61,11 +65,12 @@ import {
   deleteMessages,
   getConversation,
   getProject,
+  listIntegrations,
   listMessages,
   putConversation,
   putMessage,
 } from "@/lib/db"
-import type { ConversationRecord, ModelSettings, StoredMessage } from "@/lib/types"
+import type { ConversationRecord, IntegrationRecord, ModelSettings, StoredMessage } from "@/lib/types"
 import { fileToAttachment, isTextFile, saveLibraryFile, getFileBlob, readFileText } from "@/lib/files"
 import { usePlatform } from "@/store/platform"
 import { useSession } from "@/store/session"
@@ -76,6 +81,13 @@ import { cn } from "@/lib/utils"
 type PendingAsk = {
   messageId: string
   toolId: string
+  input: string
+}
+
+type PendingApproval = {
+  messageId: string
+  toolId: string
+  name: string
   input: string
 }
 
@@ -150,6 +162,13 @@ export default function ChatPage() {
   const [modelKey, setModelKey] = React.useState("")
   const [project, setProject] = React.useState<{ instructions?: string } | null>(null)
   const [pendingLibrary, setPendingLibrary] = React.useState<MessageAttachmentData | null>(null)
+  const [pendingApproval, setPendingApproval] = React.useState<PendingApproval | null>(null)
+  const [selectedIntegrations, setSelectedIntegrations] = React.useState<string[]>([])
+  const integrations = useLiveQuery(
+    () => (user ? listIntegrations(user.uid) : Promise.resolve([])),
+    [user?.uid],
+    [] as IntegrationRecord[]
+  )
   const inputRef = React.useRef<ChatInputHandle>(null)
 
   const abortRef = React.useRef<AbortController | null>(null)
@@ -169,6 +188,19 @@ export default function ChatPage() {
       undefined
     )
   }, [modelKey, models])
+
+  /** Only a connected token reaches the agent, and only for the attached service. */
+  const integrationContext = React.useMemo<IntegrationContext>(() => {
+    const github = integrations.find(
+      (record) => record.serviceId === "github" && record.status === "connected" && record.token
+    )
+    return {
+      github: github?.token
+        ? { token: github.token, login: github.account?.login ?? github.accountLabel }
+        : undefined,
+      selected: selectedIntegrations,
+    }
+  }, [integrations, selectedIntegrations])
 
   const currentProvider = currentModel ? getProvider(currentModel.providerId) : undefined
   const currentKey = currentProvider
@@ -425,7 +457,7 @@ export default function ChatPage() {
 
   const runTurn = async (
     history: ChatMessageData[],
-    options?: { assistantId?: string }
+    options?: { assistantId?: string; approvedTools?: string[] }
   ) => {
     if (!user || !currentModel || !currentProvider) return
     if (!currentKey?.apiKey) {
@@ -449,11 +481,12 @@ export default function ChatPage() {
     setStartedAt(Date.now())
     setLastError(null)
     setPendingAsk(null)
+    setPendingApproval(null)
 
     const controller = new AbortController()
     abortRef.current = controller
 
-    const toolSpecs = [...availableToolSpecs(settings!)]
+    const toolSpecs = [...availableToolSpecs({ settings: settings!, integrations: integrationContext })]
     if (currentModel.capabilities["tool-calling"] !== "unsupported") {
       toolSpecs.push(ASK_QUESTION_SPEC)
     }
@@ -493,6 +526,8 @@ export default function ChatPage() {
       system,
       turns,
       toolSpecs,
+      integrations: integrationContext,
+      approvedTools: options?.approvedTools,
       signal: controller.signal,
       hooks: {
         onStage: (next) => setStage(next),
@@ -551,6 +586,17 @@ export default function ChatPage() {
       setPendingAsk(null)
     }
 
+    if (result.pendingApproval) {
+      setPendingApproval({
+        messageId: assistantId,
+        toolId: result.pendingApproval.toolId,
+        name: result.pendingApproval.name,
+        input: result.pendingApproval.input,
+      })
+    } else {
+      setPendingApproval(null)
+    }
+
     liveRef.current = null
     setMessages((current) =>
       current.map((message) => (message.id === assistantId ? { ...assistantMessage } : message))
@@ -586,6 +632,10 @@ export default function ChatPage() {
     if (!user) return
     if (pendingAsk) {
       toast.message("Answer the open question first.")
+      return
+    }
+    if (pendingApproval) {
+      toast.message("Approve or cancel the pending action first.")
       return
     }
     if (!currentModel || !currentProvider) {
@@ -742,6 +792,63 @@ export default function ChatPage() {
     await runTurn(history)
   }
 
+  /**
+   * A write tool stops the turn until this runs. Nothing is executed on the
+   * user's behalf without this click: approval executes exactly the call the
+   * model asked for and hands its real result back into the conversation.
+   */
+  const resolveApproval = async (approved: boolean) => {
+    const pending = pendingApproval
+    if (!pending || !settings || !conversationId) return
+    setPendingApproval(null)
+    if (!approved) {
+      toast.message("Write action cancelled.")
+      return
+    }
+    const tool = toolByName(pending.name)
+    if (!tool) {
+      toast.error(`Unknown tool ${pending.name}.`)
+      return
+    }
+    let args: Record<string, unknown> = {}
+    try {
+      args = pending.input ? (JSON.parse(pending.input) as Record<string, unknown>) : {}
+    } catch {
+      args = {}
+    }
+    const result = await tool.execute(args, { settings, integrations: integrationContext })
+    const updatedMessages = messages.map((message) =>
+      message.id === pending.messageId
+        ? {
+            ...message,
+            tools: (message.tools ?? []).map((entry) =>
+              entry.id === pending.toolId
+                ? { ...entry, status: result.ok ? ("done" as const) : ("error" as const), output: result.content }
+                : entry
+            ),
+            parts: (message.parts ?? []).map((part) =>
+              part.type === "tool" && part.tool.id === pending.toolId
+                ? { ...part, tool: { ...part.tool, status: result.ok ? ("done" as const) : ("error" as const), output: result.content } }
+                : part
+            ),
+          }
+        : message
+    )
+    setMessages(updatedMessages)
+    const assistant = updatedMessages.find((message) => message.id === pending.messageId)
+    if (assistant) await saveMessage(assistant, conversationId)
+
+    const userMessage: ChatMessageData = {
+      id: crypto.randomUUID(),
+      sender: "user",
+      content: `I approved running ${pending.name}. Here is what it returned:\n\n${result.content}`,
+    }
+    const history = [...updatedMessages, userMessage]
+    setMessages(history)
+    await saveMessage(userMessage, conversationId)
+    await runTurn(history, { approvedTools: [pending.name] })
+  }
+
   const copyTranscript = async () => {
     const lastAssistant = [...messages].reverse().find((message) => message.sender === "assistant")
     if (!lastAssistant) return
@@ -833,6 +940,12 @@ export default function ChatPage() {
           className="min-w-0 max-w-[min(220px,55vw)]"
         />
       </span>
+      <IntegrationPicker
+        integrations={integrations}
+        selected={selectedIntegrations}
+        onChange={setSelectedIntegrations}
+        className="shrink-0"
+      />
       {totalContext ? (
         <span data-composer-overflow className="hidden sm:block">
           <ContextMeter used={usedContext} total={totalContext} showFrom={0.02} />
@@ -875,6 +988,24 @@ export default function ChatPage() {
           <span className="flex-1">{t("chat.noProvider")}</span>
           <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => navigate("/providers")}>
             {t("providers.title")}
+          </Button>
+        </div>
+      ) : null}
+      {pendingApproval ? (
+        <div className="mx-3 mb-1 flex flex-wrap items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[11.5px] text-amber-700 dark:text-amber-300">
+          <span className="flex-1">
+            {t("integration.approval.title")}: <span className="font-mono">{pendingApproval.name}</span>
+          </span>
+          <Button size="sm" className="h-6 text-[11px]" onClick={() => void resolveApproval(true)}>
+            {t("integration.approval.allow")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-6 text-[11px]"
+            onClick={() => void resolveApproval(false)}
+          >
+            {t("integration.approval.cancel")}
           </Button>
         </div>
       ) : null}
@@ -1024,6 +1155,11 @@ export default function ChatPage() {
 
         <div className="w-full shrink-0 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
           {banners}
+          <IntegrationChips
+            selected={selectedIntegrations}
+            integrations={integrations}
+            onRemove={(id) => setSelectedIntegrations((current) => current.filter((item) => item !== id))}
+          />
           <ChatInput
             ref={inputRef}
             className={cn(isEmpty && "pb-0 sm:pb-0")}

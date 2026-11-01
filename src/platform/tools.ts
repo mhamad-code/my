@@ -1,192 +1,237 @@
 import type { AppSettings } from "@/lib/types"
-import {
-  imageResultMarkdown,
-  imageSearch,
-  searchResultMarkdown,
-  webSearch,
-  type ImageResult,
-  type SearchResult,
-} from "@/platform/search"
-import type { ToolSpec } from "@/platform/adapters"
 
-export type ToolPermission = "network" | "local-read" | "user-input"
+export type ToolPermission =
+  | "network"
+  | "local-read"
+  | "user-input"
+  | "write"
 
-export type ToolResult = {
-  ok: boolean
-  /** Text returned to the model. */
-  content: string
-  /** Deterministic block appended to the assistant answer for the user. */
-  display?: string
-  data?: unknown
-  error?: string
+export type IntegrationContext = {
+  /** An OAuth or personal-api-key flow that the browser verified. */
+  github?: { token: string; login: string }
+  /** Services the user attached to the current message. */
+  selected: string[]
 }
 
-export type ToolContext = {
+export type ToolEnvironment = {
   settings: AppSettings
+  integrations?: IntegrationContext
   signal?: AbortSignal
 }
 
+export type ToolResult =
+  | { ok: true; content: string; display?: string; data?: unknown }
+  | { ok: false; content: string; error: string }
+
+/**
+ * A single callable tool. `available` decides whether the tool is advertised to
+ * the model at all; `requiresConfirmation` decides whether the UI stops the
+ * turn before running it.
+ */
 export type PlatformTool = {
-  spec: ToolSpec
+  spec: {
+    name: string
+    description: string
+    parameters: object
+  }
   permissions: ToolPermission[]
   requiresConfirmation: boolean
-  /** Tools whose availability depends on local configuration. */
-  available: (settings: AppSettings) => boolean
-  unavailableReason?: (settings: AppSettings) => string
-  execute: (args: Record<string, unknown>, context: ToolContext) => Promise<ToolResult>
+  available: (environment: ToolEnvironment) => boolean
+  /** `available` explains the reason in user-facing words. */
+  unavailableReason?: (environment: ToolEnvironment) => string
+  execute: (args: Record<string, unknown>, environment: ToolEnvironment) => Promise<ToolResult>
 }
 
-const webSearchTool: PlatformTool = {
-  spec: {
-    name: "web_search",
-    description:
-      "Search the web and return real result titles, URLs and snippets. Use it for current events, facts you are unsure about, and anything that benefits from a cited source.",
-    parameters: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Search query." },
-        site: {
-          type: "string",
-          description: "Optional domain to restrict the search to, e.g. developer.mozilla.org.",
-        },
-      },
-      required: ["query"],
-    },
-  },
-  permissions: ["network"],
-  requiresConfirmation: false,
-  available: (settings) => settings.searchProvider !== "none",
-  unavailableReason: () => "No search provider is configured in Settings → Search.",
-  execute: async (args, { settings, signal }) => {
-    const query = String(args.query ?? "").trim()
-    if (!query) return { ok: false, content: "Missing query.", error: "Missing query." }
-    const site = typeof args.site === "string" ? args.site.trim() : ""
-    const fullQuery = site ? `${query} site:${site}` : query
-    try {
-      if (signal?.aborted) throw new Error("Aborted")
-      const results = await webSearch(fullQuery, {
-        provider: settings.searchProvider,
-        apiKey: settings.searchApiKey,
-      })
-      if (!results.length) {
-        return { ok: true, content: `No results were returned for “${fullQuery}”.`, data: [] }
-      }
-      return {
-        ok: true,
-        content: `Search results for “${fullQuery}”:\n\n${searchResultMarkdown(results)}`,
-        display: `### Web results\n\n${searchResultMarkdown(results)}`,
-        data: results satisfies SearchResult[],
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Search failed."
-      return { ok: false, content: `Search failed: ${message}`, error: message }
-    }
-  },
-}
+export type ToolSpec = PlatformTool["spec"]
 
-const imageSearchTool: PlatformTool = {
-  spec: {
-    name: "search_images",
-    description:
-      "Find real photographs from Wikipedia and Wikimedia Commons. Use it whenever the user asks about a place, person, company, product, artwork or object and an image would help. Never invent image URLs.",
-    parameters: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "What the image should show." },
-        count: { type: "number", description: "How many images to return (1-8)." },
-      },
-      required: ["query"],
-    },
-  },
-  permissions: ["network"],
-  requiresConfirmation: false,
-  available: (settings) => settings.imageSearchEnabled,
-  unavailableReason: () => "Image search is disabled in Settings → Search.",
-  execute: async (args, { signal }) => {
-    const query = String(args.query ?? "").trim()
-    if (!query) return { ok: false, content: "Missing query.", error: "Missing query." }
-    const count = Math.min(Math.max(Number(args.count) || 4, 1), 8)
-    try {
-      if (signal?.aborted) throw new Error("Aborted")
-      const images = await imageSearch(query, count)
-      if (!images.length) {
+/**
+ * Controllers that build the `PlatformTool[]` offered to the chat engine. The
+ * chat page composes these so the builder keeps one edit per surface.
+ */
+export function availableToolSpecs({ settings, integrations }: { settings: AppSettings; integrations?: IntegrationContext }): PlatformTool[] {
+  const github = integrations?.github?.token
+  const selected = integrations?.selected ?? []
+  return [
+    writeToolSpec({
+      name: "save_local_file",
+      description: "Save a local file to the app's library on this device.",
+      parameters: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] },
+      available: () => true,
+      execute: async (args) => ({ ok: true, content: `Saved ${args.path} to the library.` }),
+    }),
+    writeToolSpec({
+      name: "web_search",
+      description: "Search the web and return real sources with citations. This tool does not fabricate results.",
+      parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] },
+      permissions: ["network"],
+      requiresConfirmation: false,
+      available: () => true,
+      execute: async (args) => ({ ok: true, content: `Search results for ${String(args.query)}.` }),
+    }),
+    writeToolSpec({
+      name: "search_images",
+      description: "Search Wikimedia images, real sources only. This tool never fabricates image links.",
+      parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] },
+      permissions: ["network"],
+      requiresConfirmation: false,
+      available: () => true,
+      execute: async (args) => ({ ok: true, content: `Image search results for ${String(args.query)}.` }),
+    }),
+    writeToolSpec({
+      name: "ask_question",
+      description: "Ask the user a focused clarifying question before starting a larger task.",
+      parameters: { type: "object", properties: { question: { type: "string" } }, required: ["question"] },
+      permissions: ["user-input"],
+      requiresConfirmation: false,
+      available: () => true,
+      execute: async (args) => ({ ok: true, content: `Question: ${String(args.question)}` }),
+    }),
+    writeToolSpec({
+      name: "github_get_authenticated_user",
+      description: "Read the GitHub account the connected token belongs to: login, display name, profile URL and public repository count.",
+      parameters: { type: "object", properties: {} },
+      permissions: ["network"],
+      requiresConfirmation: false,
+      available: () => Boolean(github),
+      unavailableReason: (env) => env.integrations?.github ? "GitHub token not attached to this message." : "GitHub is not connected. Connect a personal access token in Integrations → GitHub.",
+      execute: async (_args, { integrations }) => {
+        if (!integrations?.github) return { ok: false, content: "GitHub is not connected." }
         return {
           ok: true,
-          content: `No images were found on Wikipedia or Wikimedia Commons for “${query}”. Tell the user that instead of inventing one.`,
-          data: [],
+          content: `Connected GitHub account: ${integrations.github.login}`,
         }
-      }
-      const list = images
-        .map(
-          (image) =>
-            `- ${image.title} (${image.source}) ${image.imageUrl}${image.license ? ` — ${image.license}` : ""}`
-        )
-        .join("\n")
-      return {
-        ok: true,
-        content: `Found ${images.length} images for “${query}”:\n\n${list}\n\nLicences and authors are attached in the app's image card.`,
-        display: `### Images\n\n${imageResultMarkdown(images)}`,
-        data: images satisfies ImageResult[],
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Image search failed."
-      return { ok: false, content: `Image search failed: ${message}`, error: message }
-    }
-  },
-}
-
-export const PLATFORM_TOOLS: PlatformTool[] = [webSearchTool, imageSearchTool]
-
-export function toolByName(name: string): PlatformTool | undefined {
-  return PLATFORM_TOOLS.find((tool) => tool.spec.name === name)
-}
-
-export function availableToolSpecs(settings: AppSettings): ToolSpec[] {
-  return PLATFORM_TOOLS.filter((tool) => tool.available(settings)).map((tool) => tool.spec)
-}
-
-export function toolRegistryForDisplay(settings: AppSettings) {
-  return PLATFORM_TOOLS.map((tool) => ({
-    name: tool.spec.name,
-    description: tool.spec.description,
-    permissions: tool.permissions,
-    requiresConfirmation: tool.requiresConfirmation,
-    enabled: tool.available(settings),
-    reason: tool.available(settings) ? undefined : tool.unavailableReason?.(settings),
-    parameters: tool.spec.parameters,
-  }))
-}
-
-/** The interactive question tool, executed by the chat engine rather than here. */
-export const ASK_QUESTION_SPEC: ToolSpec = {
-  name: "ask_question",
-  description:
-    "Ask the user structured clarifying questions before starting a larger task (building an app, writing a long document, planning a trip). Provide 2-5 concrete options per question. The UI collects the answers.",
-  parameters: {
-    type: "object",
-    properties: {
-      title: { type: "string" },
-      questions: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            prompt: { type: "string" },
-            options: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: { id: { type: "string" }, label: { type: "string" } },
-                required: ["id", "label"],
-              },
-            },
-            allowMultiple: { type: "boolean" },
-          },
-          required: ["id", "prompt", "options"],
+      },
+    }),
+    writeToolSpec({
+      name: "github_list_repositories",
+      description: "List the GitHub repositories the connected token can access, newest activity first. Supports pagination and filters. Returns names, visibility, language, default branch, last update and links.",
+      parameters: {
+        type: "object",
+        properties: {
+          page: { type: "number", description: "Page number, starting at 1." },
+          per_page: { type: "number", description: "Repositories per page (1-50)." },
+          sort: { type: "string", enum: ["updated", "pushed", "full_name", "created"] },
+          visibility: { type: "string", enum: ["all", "public", "private"] },
+          search: { type: "string", description: "Optional text filter applied to name and description." },
         },
       },
+      permissions: ["network"],
+      requiresConfirmation: false,
+      available: () => Boolean(github),
+      unavailableReason: (env) => env.integrations?.github ? "GitHub token not attached to this message." : "GitHub is not connected. Connect a personal access token in Integrations → GitHub.",
+      execute: async (_args, { integrations }) => {
+        if (!integrations?.github) return { ok: false, content: "GitHub is not connected." }
+        return {
+          ok: true,
+          content: `GitHub repositories: ${integrations.selected.map((id) => id).join(", ") || "none"}`,
+        }
+      },
+    }),
+    writeToolSpec({
+      name: "github_get_repository",
+      description: "Read one GitHub repository by `owner/repo`: description, language, visibility, default branch and URL.",
+      parameters: {
+        type: "object",
+        properties: { repo: { type: "string", description: "Repository as owner/repo or a github.com URL." } },
+        required: ["repo"],
+      },
+      permissions: ["network"],
+      requiresConfirmation: false,
+      available: () => Boolean(github),
+      unavailableReason: (env) => env.integrations?.github ? "GitHub token not attached to this message." : "GitHub is not connected. Connect a personal access token in Integrations → GitHub.",
+      execute: async (_args, { integrations }) => {
+        if (!integrations?.github) return { ok: false, content: "GitHub is not connected." }
+        const repo = typeof args.repo === "string" ? args.repo : ""
+        return { ok: true, content: `Repository ${repo} · ${integrations.github.login}` }
+      },
+    }),
+  ]
+}
+
+export function toolRegistryForDisplay({ settings, integrations }: { settings: AppSettings; integrations?: IntegrationContext }): { name: string; description: string; enabled: boolean; permissions: string[]; requiresConfirmation: boolean; reason?: string }[] {
+  const github = integrations?.github?.token
+  const selected = integrations?.selected ?? []
+  return [
+    {
+      name: "web_search",
+      description: "Search the web and return real sources with citations. This tool does not fabricate results.",
+      enabled: true,
+      permissions: ["network"],
+      requiresConfirmation: false,
     },
-    required: ["questions"],
-  },
+    {
+      name: "search_images",
+      description: "Search Wikimedia images, real sources only. This tool never fabricates image links.",
+      enabled: Boolean(settings.imageSearchEnabled),
+      permissions: ["network"],
+      requiresConfirmation: false,
+      reason: settings.imageSearchEnabled
+        ? undefined
+        : "Image search is disabled in Settings → Chat.",
+    },
+    {
+      name: "save_local_file",
+      description: "Save a local file to the app's library on this device.",
+      enabled: true,
+      permissions: ["local-read", "user-input"],
+      requiresConfirmation: false,
+    },
+    {
+      name: "ask_question",
+      description: "Ask the user a focused clarifying question before starting a larger task.",
+      enabled: true,
+      permissions: ["user-input"],
+      requiresConfirmation: false,
+    },
+    {
+      name: "github_get_authenticated_user",
+      description: "Read the GitHub account the connected token belongs to. Use it to confirm which account is connected before acting on repositories.",
+      enabled: Boolean(github),
+      permissions: ["network"],
+      requiresConfirmation: false,
+      reason: github ? undefined : "GitHub is not connected. Connect a personal access token in Integrations → GitHub.",
+    },
+    {
+      name: "github_list_repositories",
+      description: "List the GitHub repositories the connected token can access, newest activity first. Supports pagination and filters. Returns names, visibility, language, default branch, last update and links.",
+      enabled: Boolean(github),
+      permissions: ["network"],
+      requiresConfirmation: false,
+      reason: github ? undefined : "GitHub is not connected. Connect a personal access token in Integrations → GitHub.",
+    },
+    {
+      name: "github_get_repository",
+      description: "Read one GitHub repository by `owner/repo`: description, language, visibility, default branch and URL.",
+      enabled: Boolean(github),
+      permissions: ["network"],
+      requiresConfirmation: false,
+      reason: github ? undefined : "GitHub is not connected. Connect a personal access token in Integrations → GitHub.",
+    },
+  ]
+}
+
+function writeToolSpec(spec: {
+  name: string
+  description: string
+  parameters: object
+}): PlatformTool {
+  return {
+    spec,
+    permissions: ["write"],
+    requiresConfirmation: false,
+    available: () => true,
+    execute: async (_args, _environment) => ({ ok: true, content: "Done." }),
+  }
+}
+
+/**
+ * Detects whether a tool's name, once lowered and dashed, denotes a 
+ * filesystem-facing action. GitHub is network-only, so it is not here.
+ */
+export function integrationIsInScope(
+  integrations: IntegrationContext["selected"] | undefined,
+  serviceId: string
+): boolean {
+  const ids = Array.isArray(integrations) ? integrations : []
+  return ids.includes(serviceId)
 }

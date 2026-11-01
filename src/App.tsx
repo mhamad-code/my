@@ -1,6 +1,7 @@
 import * as React from "react"
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom"
 import { ThemeProvider, useTheme } from "next-themes"
+import { Direction } from "radix-ui"
 
 import { AppShell } from "@/components/layout/AppShell"
 import { Spinner } from "@/components/ui/spinner"
@@ -79,10 +80,16 @@ const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, "")
 
 export default function App() {
   const init = useSession((state) => state.init)
+  // Radix positions submenus from this provider's direction. Without it every
+  // menu assumes LTR and opens past the inline-start edge once the UI is RTL.
+  const direction = usePlatform((state) => (state.settings?.language === "ar" ? "rtl" : "ltr")) as
+    | "rtl"
+    | "ltr"
   React.useEffect(() => init(), [init])
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+      <Direction.Provider dir={direction}>
       <TooltipProvider delayDuration={200}>
       <BrowserRouter basename={routerBasename}>
         <React.Suspense fallback={<FullScreenSpinner />}>
@@ -109,6 +116,7 @@ export default function App() {
       </BrowserRouter>
       </TooltipProvider>
       <Toaster position="top-center" />
+      </Direction.Provider>
     </ThemeProvider>
   )
 }

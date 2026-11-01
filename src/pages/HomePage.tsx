@@ -84,7 +84,7 @@ export default function HomePage() {
     .filter(Boolean)
 
   const tools = settings
-    ? availableToolSpecs(settings).map((spec) => {
+    ? availableToolSpecs({ settings }).map((spec) => {
         const registry = {
           web_search: t("searchPage.quick"),
           search_images: t("searchPage.images"),

@@ -311,11 +311,9 @@ type ModelListProps = {
   emptyMessage: string
 }
 
-/**
- * Short lists are plain menu items — Radix's own typeahead is enough. Long ones
+/** Short lists are plain menu items — Radix's own typeahead is enough. Long ones
  * (a local runtime's whole model directory, say) get cmdk, which owns focus and
- * arrow keys inside the submenu so the menu's typeahead never sees the keys.
- */
+ * arrow keys inside the submenu so the menu's typeahead never sees the keys. */
 function ModelList({
   options,
   groups,

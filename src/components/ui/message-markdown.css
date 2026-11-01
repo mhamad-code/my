@@ -1,0 +1,312 @@
+/* Element rules stop at a generative view: its blocks carry their own type
+   and spacing, and a markdown paragraph margin or link colour leaking into a
+   table cell is exactly what made it look like a document, not a UI. The
+   guard is wrapped in :where() so it adds no specificity. */
+.lc-markdown {
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.65;
+  min-width: 0;
+  /* Long URLs and identifiers must never push the page sideways. */
+  overflow-wrap: anywhere;
+}
+
+/* Reasoning stays quieter than the answer — inherit the muted wrapper. */
+[data-slot="message-reasoning"] .lc-markdown,
+[data-slot="message-reasoning"] .lc-markdown h1,
+[data-slot="message-reasoning"] .lc-markdown h2,
+[data-slot="message-reasoning"] .lc-markdown h3,
+[data-slot="message-reasoning"] .lc-markdown h4,
+[data-slot="message-reasoning"] .lc-markdown strong,
+[data-slot="message-reasoning"] .lc-markdown code:not(pre code) {
+  color: inherit;
+}
+
+/* Wide content scrolls inside its own box instead of the page. */
+.lc-markdown [data-streamdown="table-wrapper"] {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.lc-markdown img:where(:not([data-slot="generative-view"] *)),
+.lc-markdown [data-streamdown="image"] img,
+.lc-markdown [data-streamdown="image"] {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+}
+
+.lc-markdown .katex {
+  color: inherit;
+  font-size: 1.05em;
+}
+
+.lc-markdown .katex-display {
+  margin: 12px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
+.lc-markdown table:where(:not([data-slot="generative-view"] *)) {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  overflow-wrap: normal;
+}
+
+.lc-markdown th:where(:not([data-slot="generative-view"] *)),
+.lc-markdown td:where(:not([data-slot="generative-view"] *)) {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.lc-markdown th:where(:not([data-slot="generative-view"] *)) {
+  background: var(--muted);
+  font-weight: 600;
+}
+
+.lc-markdown [data-streamdown="mermaid"] {
+  overflow-x: auto;
+  margin: 10px 0 14px;
+}
+
+.lc-markdown p:where(:not([data-slot="generative-view"] *)) {
+  margin: 0 0 12px;
+}
+
+.lc-markdown p:where(:not([data-slot="generative-view"] *)):last-child {
+  margin-bottom: 0;
+}
+
+.lc-markdown h1:where(:not([data-slot="generative-view"] *)),
+.lc-markdown h2:where(:not([data-slot="generative-view"] *)),
+.lc-markdown h3:where(:not([data-slot="generative-view"] *)),
+.lc-markdown h4:where(:not([data-slot="generative-view"] *)) {
+  margin: 18px 0 8px;
+  font-weight: 600;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+
+.lc-markdown h1:where(:not([data-slot="generative-view"] *)) {
+  font-size: 22px;
+}
+
+.lc-markdown h2:where(:not([data-slot="generative-view"] *)) {
+  font-size: 19px;
+}
+
+.lc-markdown h3:where(:not([data-slot="generative-view"] *)) {
+  font-size: 16.5px;
+}
+
+.lc-markdown h4:where(:not([data-slot="generative-view"] *)) {
+  font-size: 15px;
+}
+
+.lc-markdown a:where(:not([data-slot="generative-view"] *)) {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.lc-markdown strong:where(:not([data-slot="generative-view"] *)) {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.lc-markdown ul:where(:not([data-slot="generative-view"] *)),
+.lc-markdown ol:where(:not([data-slot="generative-view"] *)) {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+
+.lc-markdown li:where(:not([data-slot="generative-view"] *)) {
+  margin: 4px 0;
+}
+
+.lc-markdown blockquote:where(:not([data-slot="generative-view"] *)) {
+  margin: 12px 0;
+  padding: 4px 0 4px 14px;
+  border-left: 3px solid var(--border);
+  color: var(--muted-foreground);
+}
+
+.lc-markdown hr:where(:not([data-slot="generative-view"] *)) {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 18px 0;
+}
+
+.lc-markdown code:where(:not([data-slot="generative-view"] *)):not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--muted);
+  color: var(--foreground);
+  padding: 1px 6px;
+  border-radius: calc(var(--radius) * 0.6);
+}
+
+.lc-markdown [data-streamdown="code-block"] {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  margin: 8px 0 12px;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--muted);
+  content-visibility: visible;
+  contain-intrinsic-size: none;
+}
+
+/* Adapted from T3 Code (github.com/pingdotgg/t3code), MIT License, (c) 2026
+   T3 Tools Inc. — the frame is the surface in dark mode, not a line around it,
+   and the header below is a quiet line inside the frame rather than a bar. */
+.dark .lc-markdown [data-streamdown="code-block"] {
+  border-color: transparent;
+}
+
+.lc-markdown [data-streamdown="code-block-header"] {
+  grid-column: 1;
+  grid-row: 1;
+  height: 1.75rem;
+  min-height: 1.75rem;
+  padding: 6px 6px 0 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted-foreground);
+  border-bottom: 0;
+}
+
+.lc-markdown [data-streamdown="code-block"] > :has(> [data-streamdown="code-block-actions"]) {
+  grid-column: 2;
+  grid-row: 1;
+  position: static;
+  top: auto;
+  margin-top: 0;
+  height: 1.75rem;
+  padding: 6px 6px 0 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-bottom: 0;
+}
+
+.lc-markdown [data-streamdown="code-block-actions"] {
+  height: auto;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.lc-markdown [data-streamdown="code-block-body"] {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  border: 0;
+  border-radius: 0;
+  padding: 6px 12px 12px;
+  background: transparent;
+}
+
+.lc-markdown [data-streamdown="code-block"] pre,
+.lc-markdown [data-streamdown="code-block"] pre code {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.lc-markdown pre:where(:not([data-slot="generative-view"] *)) {
+  margin: 8px 0 12px;
+  background: var(--muted);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.lc-markdown pre:where(:not([data-slot="generative-view"] *)) code {
+  display: block;
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--foreground);
+  background: transparent;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+/*
+ * GitHub alerts — a blockquote whose first line was `[!NOTE]`, marked by
+ * `remarkGithubAlerts`. The five hues are deliberate raw values, the same
+ * exception the diff +/- counts take: no theme token carries "tip" or
+ * "warning", and a mid-lightness oklch reads on both surfaces. Everything else
+ * — the tint, the text — is mixed from that one hue and the theme's own
+ * foreground, so a callout still belongs to whatever theme is on.
+ */
+.lc-markdown blockquote[data-alert] {
+  --lc-alert: var(--muted-foreground);
+  margin: 14px 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--lc-alert);
+  border-radius: calc(var(--radius) * 0.6);
+  background: color-mix(in oklab, var(--lc-alert) 9%, transparent);
+  color: var(--foreground);
+  /* The renderer italicizes quotes; a callout is not one. */
+  font-style: normal;
+}
+
+.lc-markdown blockquote[data-alert]::before {
+  content: attr(data-alert);
+  display: block;
+  margin-bottom: 4px;
+  color: var(--lc-alert);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+}
+
+.lc-markdown blockquote[data-alert] > :last-child {
+  margin-bottom: 0;
+}
+
+.lc-markdown blockquote[data-alert="note"] {
+  --lc-alert: oklch(0.62 0.14 250);
+}
+
+.lc-markdown blockquote[data-alert="tip"] {
+  --lc-alert: oklch(0.62 0.13 155);
+}
+
+.lc-markdown blockquote[data-alert="important"] {
+  --lc-alert: oklch(0.62 0.16 300);
+}
+
+.lc-markdown blockquote[data-alert="warning"] {
+  --lc-alert: oklch(0.68 0.14 75);
+}
+
+.lc-markdown blockquote[data-alert="caution"] {
+  --lc-alert: var(--destructive);
+}
+
+/* The paced reveal's word fade is motion; readers who asked for less get the
+   words without it. Pacing itself stays — text arriving is not animation. */
+@media (prefers-reduced-motion: reduce) {
+  .lc-markdown [data-sd-animate],
+  .lc-markdown [data-sd-animate-marker]::marker {
+    animation: none;
+  }
+}

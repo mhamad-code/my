@@ -1,0 +1,441 @@
+{
+  "errors": [
+    "console: Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using templa",
+    "console: Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using templa",
+    "console: Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using templa"
+  ],
+  "sweep": [
+    {
+      "width": 768,
+      "route": "/",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/chat",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/models",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/providers",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/projects",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/library",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/images",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/search",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/integrations",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/settings",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/account",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/login",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 768,
+      "route": "/register",
+      "viewport": 768,
+      "scrollWidth": 768,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/chat",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/models",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/providers",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/projects",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/library",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/images",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/search",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/integrations",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/settings",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/account",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/login",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1024,
+      "route": "/register",
+      "viewport": 1024,
+      "scrollWidth": 1024,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/chat",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/models",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/providers",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/projects",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/library",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/images",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/search",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/integrations",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/settings",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/account",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/login",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1280,
+      "route": "/register",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/chat",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/models",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/providers",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/projects",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/library",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/images",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/search",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/integrations",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/settings",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/account",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/login",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 1440,
+      "route": "/register",
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "offenders": [],
+      "offenderCount": 0
+    }
+  ],
+  "images": [
+    {
+      "width": 144,
+      "height": 144
+    },
+    {
+      "width": 144,
+      "height": 139
+    }
+  ],
+  "checks": {
+    "sidebarClosedByDefault": "true",
+    "sidebarOpenWidth": 320,
+    "sidebarAfterEscape": "true"
+  },
+  "fatal": null
+}

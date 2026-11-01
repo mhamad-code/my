@@ -1,0 +1,203 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "streamdown/styles.css";
+
+
+@source "../node_modules/streamdown/dist/*.js";
+@source "../node_modules/@streamdown/code/dist/*.js";
+@source "../node_modules/@streamdown/mermaid/dist/*.js";
+@source "../node_modules/@streamdown/math/dist/*.js";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.985 0.002 250);
+  --foreground: oklch(0.205 0.006 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0.006 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.205 0.006 265);
+  --primary: oklch(0.52 0.115 250);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.965 0.002 265);
+  --secondary-foreground: oklch(0.25 0.006 265);
+  --muted: oklch(0.96 0.003 265);
+  --muted-foreground: oklch(0.5 0.012 265);
+  --accent: oklch(0.95 0.014 250);
+  --accent-foreground: oklch(0.3 0.03 250);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.905 0.004 265);
+  --input: oklch(0.905 0.004 265);
+  --ring: oklch(0.52 0.115 250);
+  --chart-1: oklch(0.52 0.115 250);
+  --chart-2: oklch(0.62 0.09 195);
+  --chart-3: oklch(0.48 0.06 270);
+  --chart-4: oklch(0.72 0.09 90);
+  --chart-5: oklch(0.6 0.12 20);
+  --sidebar: oklch(0.968 0.002 250);
+  --sidebar-foreground: oklch(0.205 0.006 265);
+  --sidebar-primary: oklch(0.52 0.115 250);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.935 0.008 250);
+  --sidebar-accent-foreground: oklch(0.25 0.02 250);
+  --sidebar-border: oklch(0.905 0.004 265);
+  --sidebar-ring: oklch(0.52 0.115 250);
+}
+
+.dark {
+  --background: oklch(0.175 0.005 260);
+  --foreground: oklch(0.94 0.003 250);
+  --card: oklch(0.215 0.006 260);
+  --card-foreground: oklch(0.94 0.003 250);
+  --popover: oklch(0.215 0.006 260);
+  --popover-foreground: oklch(0.94 0.003 250);
+  --primary: oklch(0.74 0.09 250);
+  --primary-foreground: oklch(0.18 0.01 260);
+  --secondary: oklch(0.265 0.006 260);
+  --secondary-foreground: oklch(0.94 0.003 250);
+  --muted: oklch(0.26 0.006 260);
+  --muted-foreground: oklch(0.72 0.008 260);
+  --accent: oklch(0.29 0.014 255);
+  --accent-foreground: oklch(0.95 0.004 250);
+  --destructive: oklch(0.68 0.19 25);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.74 0.09 250);
+  --chart-1: oklch(0.74 0.09 250);
+  --chart-2: oklch(0.72 0.08 195);
+  --chart-3: oklch(0.68 0.07 275);
+  --chart-4: oklch(0.8 0.09 90);
+  --chart-5: oklch(0.7 0.13 25);
+  --sidebar: oklch(0.195 0.005 260);
+  --sidebar-foreground: oklch(0.94 0.003 250);
+  --sidebar-primary: oklch(0.74 0.09 250);
+  --sidebar-primary-foreground: oklch(0.18 0.01 260);
+  --sidebar-accent: oklch(0.275 0.008 260);
+  --sidebar-accent-foreground: oklch(0.95 0.004 250);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.74 0.09 250);
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-heading: var(--font-sans);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply antialiased font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Answers: remote images never take over the transcript, links read
+ * as links, and nothing can push the page sideways on a phone.
+ * ------------------------------------------------------------------ */
+
+html,
+body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  max-width: 100%;
+}
+
+img {
+  max-width: 100%;
+}
+
+[data-slot="message-markdown"] img,
+img[data-slot="message-markdown-image"] {
+  max-width: min(100%, 32rem);
+  max-height: min(18rem, 42vh);
+  width: auto;
+  height: auto;
+  border-radius: calc(var(--radius) - 2px);
+  border: 1px solid var(--border);
+  background: var(--muted);
+  object-fit: contain;
+}
+
+[data-slot="message-markdown"] a[data-media-card] {
+  color: var(--card-foreground);
+  text-decoration: none;
+}
+
+[data-slot="message-markdown"] a[data-media-card] [data-media-muted] {
+  color: var(--muted-foreground);
+}
+
+[data-slot="message-markdown"] a[href^="http"]:not([data-media-card]) {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+[data-slot="message-markdown"] a[href^="http"]:not([data-media-card]):hover {
+  text-decoration-thickness: 2px;
+}
+
+[data-slot="message-markdown"] h1,
+[data-slot="message-markdown"] h2,
+[data-slot="message-markdown"] h3 {
+  text-wrap: balance;
+}
+
+@media (max-width: 380px) {
+  [data-slot="message-markdown"] img,
+  img[data-slot="message-markdown-image"] {
+    max-height: 12rem;
+  }
+}

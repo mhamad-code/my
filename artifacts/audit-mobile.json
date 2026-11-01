@@ -1,0 +1,697 @@
+{
+  "errors": [
+    "console: Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using templa",
+    "console: Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using templa",
+    "console: Failed to load resource: net::ERR_NAME_NOT_RESOLVED"
+  ],
+  "sweep": [
+    {
+      "width": 320,
+      "route": "/",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/chat",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/models",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/providers",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/projects",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/library",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/images",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/search",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/integrations",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/settings",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/account",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/login",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 320,
+      "route": "/register",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/chat",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/models",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/providers",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/projects",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/library",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/images",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/search",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/integrations",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/settings",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/account",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/login",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 360,
+      "route": "/register",
+      "viewport": 360,
+      "scrollWidth": 360,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/chat",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/models",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/providers",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/projects",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/library",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/images",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/search",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/integrations",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/settings",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/account",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/login",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 375,
+      "route": "/register",
+      "viewport": 375,
+      "scrollWidth": 375,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/chat",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/models",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/providers",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/projects",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/library",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/images",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/search",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/integrations",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/settings",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/account",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/login",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 390,
+      "route": "/register",
+      "viewport": 390,
+      "scrollWidth": 390,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/chat",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/models",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/providers",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/projects",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/library",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/images",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/search",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/integrations",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/settings",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/account",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/login",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 414,
+      "route": "/register",
+      "viewport": 414,
+      "scrollWidth": 414,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/chat",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/models",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/providers",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/projects",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/library",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/images",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/search",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/integrations",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/settings",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/account",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/login",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    },
+    {
+      "width": 430,
+      "route": "/register",
+      "viewport": 430,
+      "scrollWidth": 430,
+      "offenders": [],
+      "offenderCount": 0
+    }
+  ],
+  "checks": {
+    "cards": 5,
+    "sourceStyle": {
+      "color": "oklch(0.5 0.012 265)",
+      "decoration": "none"
+    },
+    "brokenFallback": 2,
+    "lightboxOpened": 1,
+    "lightboxClosed": 0,
+    "sidebarClosedByDefault": {
+      "hidden": "true",
+      "inert": true,
+      "left": -320,
+      "right": 0,
+      "width": 320,
+      "viewport": 390
+    },
+    "sidebarOpen": {
+      "hidden": "false",
+      "inert": false,
+      "left": 0,
+      "right": 320,
+      "width": 320,
+      "viewport": 390
+    },
+    "sidebarAfterEscape": {
+      "hidden": "true",
+      "inert": true,
+      "left": -320,
+      "right": 0,
+      "width": 320,
+      "viewport": 390
+    },
+    "sidebarAfterBackdrop": {
+      "hidden": "true",
+      "inert": true,
+      "left": -320,
+      "right": 0,
+      "width": 320,
+      "viewport": 390
+    }
+  },
+  "images": [
+    {
+      "slot": "media-card-image",
+      "width": 96,
+      "height": 96,
+      "messageWidth": 366,
+      "overflowsMessage": false,
+      "viewportOverflow": false
+    },
+    {
+      "slot": "media-card-image",
+      "width": 96,
+      "height": 93,
+      "messageWidth": 366,
+      "overflowsMessage": false,
+      "viewportOverflow": false
+    }
+  ],
+  "seed": {
+    "id": "media-fixture"
+  },
+  "fatal": null
+}

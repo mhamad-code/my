@@ -44,10 +44,6 @@ export type PlatformTool = {
 
 export type ToolSpec = PlatformTool["spec"]
 
-/**
- * Controllers that build the `PlatformTool[]` offered to the chat engine. The
- * chat page composes these so the builder keeps one edit per surface.
- */
 export function availableToolSpecs({ settings, integrations }: { settings: AppSettings; integrations?: IntegrationContext }): PlatformTool[] {
   const github = integrations?.github?.token
   const selected = integrations?.selected ?? []

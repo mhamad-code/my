@@ -1,4 +1,14 @@
-import { CheckCircle2, ExternalLink, Info, Loader2, Search, ShieldAlert } from "lucide-react"
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Info,
+  Loader2,
+  RefreshCw,
+  Search,
+  ShieldAlert,
+  Trash2,
+} from "lucide-react"
 import * as React from "react"
 import { useLiveQuery } from "dexie-react-hooks"
 import { toast } from "sonner"
@@ -18,89 +28,69 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import { deleteIntegration, listIntegrations, putIntegration } from "@/lib/db"
 import type { IntegrationRecord } from "@/lib/types"
+import { GitHubApiError, listRepositories, verifyToken, type GitHubRepo } from "@/platform/github"
+import {
+  INTEGRATION_CATEGORIES,
+  INTEGRATION_SERVICES,
+  type IntegrationService,
+} from "@/platform/integrations"
 import { useSession } from "@/store/session"
 import { useT } from "@/i18n"
 
-type Category = "Git" | "Hosting & app builders" | "Design & productivity" | "Databases" | "Monitoring & automation"
+type CardStatus =
+  | { kind: "connected"; record: IntegrationRecord }
+  | { kind: "not-connected" }
+  | { kind: "setup" }
+  | { kind: "expired"; record: IntegrationRecord }
+  | { kind: "permission"; record: IntegrationRecord }
+  | { kind: "error"; record: IntegrationRecord; message?: string }
+  | { kind: "backend" }
 
-type Service = {
-  id: string
-  name: string
-  category: Category
-  description: string
-  slug?: string
-  accent: string
-  docs?: string
-  /** true only when the service can be verified from the browser without a secret. */
-  browserVerifiable?: boolean
+function cardStatus(service: IntegrationService, record: IntegrationRecord | undefined): CardStatus {
+  if (!record) return service.connect === "backend" ? { kind: "backend" } : { kind: "not-connected" }
+  switch (record.status) {
+    case "connected":
+      return { kind: "connected", record }
+    case "expired":
+      return { kind: "expired", record }
+    case "permission":
+      return { kind: "permission", record }
+    case "error":
+      return { kind: "error", record, message: record.lastError }
+    default:
+      return { kind: "not-connected" }
+  }
 }
 
-const SERVICES: Service[] = [
-  { id: "github", name: "GitHub", category: "Git", description: "Repos, issues and pull requests. Personal access tokens can be verified from the browser.", slug: "github", accent: "#8b949e", browserVerifiable: true, docs: "https://docs.github.com/rest" },
-  { id: "gitlab", name: "GitLab", category: "Git", description: "Projects and merge requests through OAuth.", slug: "gitlab", accent: "#fc6d26" },
-  { id: "bitbucket", name: "Bitbucket", category: "Git", description: "Repositories and pull requests through Atlassian OAuth.", slug: "bitbucket", accent: "#0052cc" },
-  { id: "codeberg", name: "Codeberg", category: "Git", description: "Forgejo-based hosting with OAuth applications.", slug: "codeberg", accent: "#2185d0" },
-  { id: "sourcehut", name: "SourceHut", category: "Git", description: "Mail-driven git hosting with OAuth tokens.", slug: "sourcehut", accent: "#3a3a3a" },
+function statusLabel(status: CardStatus, t: (key: string) => string): string {
+  switch (status.kind) {
+    case "connected":
+      return t("integration.connected")
+    case "expired":
+      return t("integration.status.expired")
+    case "permission":
+      return t("integration.status.permission")
+    case "error":
+      return t("integration.status.error")
+    case "backend":
+      return t("integration.requiresBackend")
+    case "setup":
+      return t("integration.status.setup")
+    default:
+      return t("integration.notConnected")
+  }
+}
 
-  { id: "lovable", name: "Lovable", category: "Hosting & app builders", description: "App generation platform with a private API.", accent: "#ff6b9d" },
-  { id: "supabase", name: "Supabase", category: "Hosting & app builders", description: "Postgres, auth and storage platform.", slug: "supabase", accent: "#3ecf8e" },
-  { id: "firebase", name: "Firebase", category: "Hosting & app builders", description: "Google's app platform. Used here for authentication only.", slug: "firebase", accent: "#ffca28" },
-  { id: "vercel", name: "Vercel", category: "Hosting & app builders", description: "Deployments and project management.", slug: "vercel", accent: "#111111" },
-  { id: "netlify", name: "Netlify", category: "Hosting & app builders", description: "Sites, builds and deploys.", slug: "netlify", accent: "#00c7b7" },
-  { id: "cloudflare", name: "Cloudflare", category: "Hosting & app builders", description: "Workers, Pages, R2 and D1.", slug: "cloudflare", accent: "#f38020" },
-  { id: "railway", name: "Railway", category: "Hosting & app builders", description: "Service and database deployments.", slug: "railway", accent: "#0b0d0e" },
-  { id: "render", name: "Render", category: "Hosting & app builders", description: "Static sites and services.", slug: "render", accent: "#46e3b7" },
-  { id: "flyio", name: "Fly.io", category: "Hosting & app builders", description: "Machines and apps on Fly.", accent: "#24175b" },
-  { id: "replit", name: "Replit", category: "Hosting & app builders", description: "Browser IDE and hosting.", slug: "replit", accent: "#f26207" },
-  { id: "stackblitz", name: "StackBlitz", category: "Hosting & app builders", description: "In-browser development environments.", slug: "stackblitz", accent: "#1389fd" },
-  { id: "codesandbox", name: "CodeSandbox", category: "Hosting & app builders", description: "Cloud sandboxes and previews.", slug: "codesandbox", accent: "#151515" },
-  { id: "bolt", name: "Bolt", category: "Hosting & app builders", description: "AI app builder with a private API.", accent: "#1f2937" },
-  { id: "framer", name: "Framer", category: "Hosting & app builders", description: "Design-to-site publishing.", slug: "framer", accent: "#0055ff" },
-  { id: "webflow", name: "Webflow", category: "Hosting & app builders", description: "Visual web publishing with an OAuth app model.", slug: "webflow", accent: "#4353ff" },
-
-  { id: "figma", name: "Figma", category: "Design & productivity", description: "Files and design tokens through OAuth.", slug: "figma", accent: "#f24e1e" },
-  { id: "canva", name: "Canva", category: "Design & productivity", description: "Design automation with OAuth.", accent: "#00c4cc" },
-  { id: "notion", name: "Notion", category: "Design & productivity", description: "Pages and databases. Requires an integration token or OAuth.", slug: "notion", accent: "#111111" },
-  { id: "linear", name: "Linear", category: "Design & productivity", description: "Issues and projects via OAuth or API key.", slug: "linear", accent: "#5e6ad2" },
-  { id: "trello", name: "Trello", category: "Design & productivity", description: "Boards and cards through Atlassian OAuth.", slug: "trello", accent: "#0052cc" },
-  { id: "jira", name: "Jira", category: "Design & productivity", description: "Issues and projects through Atlassian OAuth.", slug: "jira", accent: "#0052cc" },
-  { id: "slack", name: "Slack", category: "Design & productivity", description: "Messages and channels, OAuth with a client secret.", accent: "#4a154b" },
-  { id: "discord", name: "Discord", category: "Design & productivity", description: "Servers and channels through OAuth2.", slug: "discord", accent: "#5865f2" },
-  { id: "teams", name: "Microsoft Teams", category: "Design & productivity", description: "Microsoft Graph with Entra ID consent.", accent: "#6264a7" },
-  { id: "gdrive", name: "Google Drive", category: "Design & productivity", description: "Files through Google OAuth and Picker.", slug: "googledrive", accent: "#4285f4" },
-
-  { id: "neon", name: "Neon", category: "Databases", description: "Serverless Postgres.", slug: "neon", accent: "#00e599" },
-  { id: "planetscale", name: "PlanetScale", category: "Databases", description: "MySQL-compatible branching database.", slug: "planetscale", accent: "#111111" },
-  { id: "mongodb", name: "MongoDB Atlas", category: "Databases", description: "Managed MongoDB clusters.", slug: "mongodb", accent: "#47a248" },
-  { id: "upstash", name: "Upstash", category: "Databases", description: "Serverless Redis and Kafka.", slug: "upstash", accent: "#00e9a3" },
-  { id: "appwrite", name: "Appwrite", category: "Databases", description: "Open-source backend platform.", slug: "appwrite", accent: "#fd366e" },
-  { id: "convex", name: "Convex", category: "Databases", description: "Reactive backend and database.", slug: "convex", accent: "#f3b01c" },
-  { id: "pocketbase", name: "PocketBase", category: "Databases", description: "Self-hosted backend in one binary.", accent: "#b8dbe4" },
-  { id: "prisma", name: "Prisma Data Platform", category: "Databases", description: "Database tooling and accelerate.", slug: "prisma", accent: "#2d3748" },
-
-  { id: "sentry", name: "Sentry", category: "Monitoring & automation", description: "Error monitoring with DSNs and OAuth.", slug: "sentry", accent: "#362d59" },
-  { id: "posthog", name: "PostHog", category: "Monitoring & automation", description: "Product analytics and session replay.", slug: "posthog", accent: "#f54e00" },
-  { id: "mixpanel", name: "Mixpanel", category: "Monitoring & automation", description: "Product analytics.", slug: "mixpanel", accent: "#7856ff" },
-  { id: "ga", name: "Google Analytics", category: "Monitoring & automation", description: "Measurement and reporting APIs.", slug: "googleanalytics", accent: "#e37400" },
-  { id: "zapier", name: "Zapier", category: "Monitoring & automation", description: "Automation webhooks and apps.", slug: "zapier", accent: "#ff4a00" },
-  { id: "make", name: "Make", category: "Monitoring & automation", description: "Scenario automation with webhooks.", slug: "make", accent: "#6d00cc" },
-  { id: "n8n", name: "n8n", category: "Monitoring & automation", description: "Self-hostable workflow automation.", slug: "n8n", accent: "#ea4b71" },
-  { id: "resend", name: "Resend", category: "Monitoring & automation", description: "Transactional email API.", slug: "resend", accent: "#111111" },
-  { id: "stripe", name: "Stripe", category: "Monitoring & automation", description: "Payments and billing.", slug: "stripe", accent: "#635bff" },
-  { id: "clerk", name: "Clerk", category: "Monitoring & automation", description: "Authentication and user management.", slug: "clerk", accent: "#6c47ff" },
-  { id: "auth0", name: "Auth0", category: "Monitoring & automation", description: "Identity platform.", slug: "auth0", accent: "#eb5424" },
-  { id: "dockerhub", name: "Docker Hub", category: "Monitoring & automation", description: "Image repositories and tokens.", slug: "docker", accent: "#2496ed" },
-]
-
-const CATEGORIES: Category[] = [
-  "Git",
-  "Hosting & app builders",
-  "Design & productivity",
-  "Databases",
-  "Monitoring & automation",
-]
+function monoDate(value: string | undefined): string {
+  if (!value) return "—"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+}
 
 export default function IntegrationsPage() {
   const { t } = useT()
@@ -108,17 +98,14 @@ export default function IntegrationsPage() {
   const integrations = useLiveQuery(
     () => (user ? listIntegrations(user.uid) : Promise.resolve([])),
     [user?.uid],
-    []
+    [] as IntegrationRecord[]
   )
   const [search, setSearch] = React.useState("")
-  const [selected, setSelected] = React.useState<Service | null>(null)
-  const [token, setToken] = React.useState("")
-  const [checking, setChecking] = React.useState(false)
+  const [selectedId, setSelectedId] = React.useState<string | null>(null)
+  const selected = selectedId ? INTEGRATION_SERVICES.find((service) => service.id === selectedId) : undefined
+  const selectedRecord = selected ? integrations.find((record) => record.serviceId === selected.id) : undefined
 
-  const connected = (serviceId: string): IntegrationRecord | undefined =>
-    integrations.find((record) => record.serviceId === serviceId)
-
-  const filtered = SERVICES.filter((service) => {
+  const filtered = INTEGRATION_SERVICES.filter((service) => {
     const term = search.trim().toLowerCase()
     if (!term) return true
     return (
@@ -128,43 +115,7 @@ export default function IntegrationsPage() {
     )
   })
 
-  const connectGithub = async () => {
-    if (!user || !token.trim()) return
-    setChecking(true)
-    try {
-      const response = await fetch("https://api.github.com/user", {
-        headers: {
-          Authorization: `Bearer ${token.trim()}`,
-          Accept: "application/vnd.github+json",
-        },
-      })
-      if (!response.ok) {
-        throw new Error(
-          response.status === 401
-            ? "GitHub rejected the token. Check that it is valid and has the read:user scope."
-            : `GitHub returned ${response.status}.`
-        )
-      }
-      const profile = (await response.json()) as { login?: string }
-      await putIntegration({
-        id: `${user.uid}:github`,
-        userId: user.uid,
-        serviceId: "github",
-        status: "connected",
-        accountLabel: profile.login,
-        token: token.trim(),
-        connectedAt: Date.now(),
-        lastCheckedAt: Date.now(),
-      })
-      toast.success(`Connected as ${profile.login ?? "GitHub user"}`)
-      setSelected(null)
-      setToken("")
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not verify the token.")
-    } finally {
-      setChecking(false)
-    }
-  }
+  const connectedCount = integrations.filter((record) => record.status === "connected").length
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -173,12 +124,12 @@ export default function IntegrationsPage() {
         description={t("integration.subtitle")}
         actions={
           <div className="flex items-center gap-1.5">
-            <Search className="size-3.5 text-muted-foreground" />
+            <Search className="size-3.5 shrink-0 text-muted-foreground" />
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={t("common.search")}
-              className="h-8 w-40 text-[12px]"
+              className="h-8 w-32 text-[12px] sm:w-44"
             />
           </div>
         }
@@ -186,15 +137,15 @@ export default function IntegrationsPage() {
       <PageBody>
         <Alert className="mb-4">
           <Info className="size-4" />
-          <AlertTitle className="text-[12.5px]">Local-first, no hidden backend</AlertTitle>
+          <AlertTitle className="text-[12.5px]">
+            {connectedCount} {t("integration.connected")}
+          </AlertTitle>
           <AlertDescription className="text-[11.5px] leading-relaxed">
-            This app has no server of its own. OAuth flows that need a client secret, a redirect
-            endpoint or webhook verification cannot run safely in a browser page, so those services are
-            listed as requiring a backend instead of pretending to be connected.
+            {t("integration.subtitle")}
           </AlertDescription>
         </Alert>
 
-        {CATEGORIES.map((category) => {
+        {INTEGRATION_CATEGORIES.map((category) => {
           const services = filtered.filter((service) => service.category === category)
           if (!services.length) return null
           return (
@@ -202,10 +153,12 @@ export default function IntegrationsPage() {
               <h2 className="mb-2 text-[12.5px] font-medium text-muted-foreground">{category}</h2>
               <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
                 {services.map((service) => {
-                  const record = connected(service.id)
+                  const record = integrations.find((item) => item.serviceId === service.id)
+                  const status = cardStatus(service, record)
+                  const usable = status.kind === "connected"
                   return (
-                    <div key={service.id} className="flex flex-col gap-2 rounded-lg border bg-card p-3">
-                      <div className="flex items-start gap-2.5">
+                    <div key={service.id} className="flex min-w-0 flex-col gap-2 rounded-lg border bg-card p-3">
+                      <div className="flex min-w-0 items-start gap-2.5">
                         <ProviderLogo
                           name={service.name}
                           slug={service.slug}
@@ -214,54 +167,33 @@ export default function IntegrationsPage() {
                         />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[12.5px] font-medium">{service.name}</p>
-                          <p className="line-clamp-2 text-[11px] text-muted-foreground">
-                            {service.description}
-                          </p>
+                          <p className="line-clamp-2 text-[11px] text-muted-foreground">{service.description}</p>
                         </div>
-                        {record ? (
-                          <Badge variant="secondary" className="h-5 shrink-0 gap-1 text-[10px]">
-                            <CheckCircle2 className="size-2.5" />
-                            {t("integration.connected")}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
-                            {service.browserVerifiable ? t("integration.notConnected") : t("integration.requiresBackend")}
-                          </Badge>
-                        )}
+                        <Badge
+                          variant={usable ? "secondary" : status.kind === "error" ? "destructive" : "outline"}
+                          className="h-5 max-w-[7.5rem] shrink-0 gap-1 truncate text-[10px]"
+                        >
+                          {usable ? <CheckCircle2 className="size-2.5 shrink-0" /> : null}
+                          {statusLabel(status, t)}
+                        </Badge>
                       </div>
-                      <div className="mt-auto flex items-center justify-between gap-2">
-                        <span className="truncate text-[10.5px] text-muted-foreground">
-                          {record?.accountLabel ?? (service.browserVerifiable ? "" : "OAuth backend required")}
+                      <div className="mt-auto flex min-w-0 items-center justify-between gap-2">
+                        <span className="min-w-0 flex-1 truncate text-[10.5px] text-muted-foreground">
+                          {status.kind === "connected"
+                            ? status.record.account?.login ?? status.record.accountLabel ?? ""
+                            : status.kind === "error"
+                              ? status.message ?? ""
+                              : ""}
                         </span>
-                        <div className="flex gap-1.5">
-                          {record ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 text-[11.5px]"
-                              onClick={() => {
-                                if (!user) return
-                                void deleteIntegration(user.uid, service.id).then(() =>
-                                  toast.success("Disconnected")
-                                )
-                              }}
-                            >
-                              {t("common.disconnect")}
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant={service.browserVerifiable ? "default" : "outline"}
-                              className="h-7 text-[11.5px]"
-                              onClick={() => {
-                                setSelected(service)
-                                setToken("")
-                              }}
-                            >
-                              {t("common.connect")}
-                            </Button>
-                          )}
-                        </div>
+                        <Button
+                          size="sm"
+                          variant={usable ? "outline" : service.connect === "token" ? "default" : "outline"}
+                          className="h-7 shrink-0 text-[11.5px]"
+                          onClick={() => setSelectedId(service.id)}
+                          aria-label={`${t("common.manage")} ${service.name}`}
+                        >
+                          {usable ? t("common.manage") : service.connect === "token" ? t("common.connect") : t("common.manage")}
+                        </Button>
                       </div>
                     </div>
                   )
@@ -272,67 +204,44 @@ export default function IntegrationsPage() {
         })}
       </PageBody>
 
-      <Dialog open={Boolean(selected)} onOpenChange={(open) => (!open ? setSelected(null) : undefined)}>
-        <DialogContent className="max-w-md">
+      <Dialog open={Boolean(selected)} onOpenChange={(open) => (open ? undefined : setSelectedId(null))}>
+        <DialogContent className="flex max-h-[min(88dvh,52rem)] w-[calc(100vw-1.5rem)] max-w-lg flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
           {selected ? (
             <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-[15px]">
-                  <ProviderLogo name={selected.name} slug={selected.slug} accent={selected.accent} className="size-7" />
-                  {selected.name}
+              <DialogHeader className="shrink-0 gap-1 border-b px-4 py-3 pe-12 text-start sm:px-5">
+                <DialogTitle className="flex min-w-0 items-center gap-2 text-[15px]">
+                  <ProviderLogo
+                    name={selected.name}
+                    slug={selected.slug}
+                    accent={selected.accent}
+                    className="size-7 shrink-0"
+                  />
+                  <span className="truncate">{selected.name}</span>
                 </DialogTitle>
-                <DialogDescription className="text-[12px] leading-relaxed">
+                <DialogDescription className="text-[11.5px] leading-relaxed">
                   {selected.description}
                 </DialogDescription>
               </DialogHeader>
 
-              {selected.browserVerifiable ? (
-                <div className="space-y-2">
-                  <Label className="text-[12px]">{t("integration.githubToken")}</Label>
-                  <Input
-                    type="password"
-                    value={token}
-                    onChange={(event) => setToken(event.target.value)}
-                    placeholder="github_pat_…"
-                    className="font-mono text-[12px]"
-                    autoComplete="off"
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5">
+                {selected.id === "github" ? (
+                  <GitHubPanel
+                    userId={user?.uid}
+                    record={selectedRecord}
+                    onRecordChanged={() => undefined}
                   />
-                  <p className="text-[10.5px] leading-relaxed text-muted-foreground">
-                    {t("integration.githubHint")}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2 rounded-md border bg-muted/40 p-3 text-[11.5px] leading-relaxed text-muted-foreground">
-                  <p className="flex items-center gap-1.5 font-medium text-foreground">
-                    <ShieldAlert className="size-3.5" />
-                    {t("integration.requiresBackend")}
-                  </p>
-                  <p>{t("integration.why")}</p>
-                  <p>
-                    {selected.name} needs an OAuth authorization-code exchange (or a signed webhook)
-                    that requires a client secret and a trusted redirect URL. Both must live on a
-                    server you control, not in this local-first app.
-                  </p>
-                  <p>
-                    A backend proxy would expose a small endpoint that stores the secret and returns a
-                    short-lived token to the app. Until one exists, this integration stays
-                    disconnected.
-                  </p>
-                </div>
-              )}
+                ) : (
+                  <BackendOnlyNote service={selected} />
+                )}
+              </div>
 
-              <DialogFooter>
-                <Button variant="outline" size="sm" onClick={() => setSelected(null)}>
+              <DialogFooter className="shrink-0 gap-2 border-t px-4 py-3 sm:px-5">
+                <Button variant="outline" size="sm" onClick={() => setSelectedId(null)}>
                   {t("common.close")}
                 </Button>
-                {selected.browserVerifiable ? (
-                  <Button size="sm" disabled={!token.trim() || checking} onClick={() => void connectGithub()}>
-                    {checking ? <Loader2 className="size-3.5 animate-spin" /> : null}
-                    {t("common.connect")}
-                  </Button>
-                ) : selected.docs ? (
+                {selected.docs ? (
                   <Button size="sm" variant="secondary" asChild>
-                    <a href={selected.docs} target="_blank" rel="noreferrer">
+                    <a href={selected.docs} target="_blank" rel="noreferrer noopener">
                       {t("common.manage")}
                       <ExternalLink className="ms-1 size-3" />
                     </a>
@@ -343,6 +252,425 @@ export default function IntegrationsPage() {
           ) : null}
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+function BackendOnlyNote({ service }: { service: IntegrationService }) {
+  const { t } = useT()
+  return (
+    <div className="space-y-2.5 rounded-md border bg-muted/40 p-3 text-[11.5px] leading-relaxed text-muted-foreground">
+      <p className="flex items-center gap-1.5 font-medium text-foreground">
+        <ShieldAlert className="size-3.5 shrink-0" />
+        {t("integration.requiresBackend")}
+      </p>
+      <p>{t("integration.why")}</p>
+      <p>
+        {service.name} needs an OAuth authorization-code exchange (or a signed webhook) that requires a
+        client secret and a trusted redirect URL. Both must live on a server you control, not in this
+        local-first app.
+      </p>
+      <p>
+        A small backend proxy would hold the secret and return a short-lived token to the app. Until one
+        exists, {service.name} cannot be connected here, and no agent tool claims otherwise.
+      </p>
+    </div>
+  )
+}
+
+type TestState = { kind: "idle" } | { kind: "running" } | { kind: "ok"; message: string } | { kind: "error"; message: string; hint?: string }
+
+/**
+ * GitHub is the one service that can be fully connected from a browser: a PAT
+ * needs no secret exchange. This panel proves the token against `GET /user`,
+ * saves the real account, and lists the repositories the token can actually see.
+ */
+function GitHubPanel({
+  userId,
+  record,
+}: {
+  userId: string | undefined
+  record: IntegrationRecord | undefined
+  onRecordChanged?: () => void
+}) {
+  const { t } = useT()
+  const [token, setToken] = React.useState("")
+  const [test, setTest] = React.useState<TestState>({ kind: "idle" })
+  const [busy, setBusy] = React.useState(false)
+  const [repos, setRepos] = React.useState<GitHubRepo[]>([])
+  const [reposLoading, setReposLoading] = React.useState(false)
+  const [reposError, setReposError] = React.useState<string | null>(null)
+  const [page, setPage] = React.useState(1)
+  const [hasMore, setHasMore] = React.useState(false)
+
+  const connected = record?.status === "connected" && Boolean(record?.token)
+
+  const loadRepos = React.useCallback(
+    async (nextPage: number, options: { token?: string; append?: boolean } = {}) => {
+      const target = options.token ?? record?.token
+      if (!target) return
+      setReposLoading(true)
+      setReposError(null)
+      try {
+        const result = await listRepositories(target, { page: nextPage, perPage: 20, sort: "updated" })
+        setRepos((current) => (options.append ? [...current, ...result.repos] : result.repos))
+        setPage(result.page)
+        setHasMore(result.hasMore)
+      } catch (error) {
+        setReposError(error instanceof GitHubApiError ? error.explanation : "Could not load repositories.")
+      } finally {
+        setReposLoading(false)
+      }
+    },
+    [record?.token]
+  )
+
+  React.useEffect(() => {
+    if (!connected) {
+      setRepos([])
+      return
+    }
+    void loadRepos(1)
+    // Only when the connection itself changes; `loadRepos` is stable per token.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected, record?.token])
+
+  const save = async (nextToken: string) => {
+    if (!userId) return
+    setBusy(true)
+    setTest({ kind: "running" })
+    try {
+      const verification = await verifyToken(nextToken)
+      const now = Date.now()
+      const isExpired =
+        verification.expiresAt !== null && new Date(verification.expiresAt).getTime() < now
+      const next: IntegrationRecord = {
+        id: `${userId}:github`,
+        userId,
+        serviceId: "github",
+        status: isExpired ? "expired" : "connected",
+        accountLabel: verification.profile.login,
+        account: {
+          login: verification.profile.login,
+          name: verification.profile.name,
+          avatarUrl: verification.profile.avatarUrl,
+          htmlUrl: verification.profile.htmlUrl,
+          type: verification.profile.type,
+          publicRepos: verification.profile.publicRepos,
+        },
+        tokenType: verification.tokenType,
+        scopes: verification.scopes,
+        expiresAt: verification.expiresAt,
+        token: nextToken,
+        connectedAt: record?.connectedAt ?? now,
+        lastCheckedAt: now,
+        lastError: isExpired ? "This token expired." : undefined,
+      }
+      await putIntegration(next)
+      setToken("")
+      setTest({
+        kind: isExpired ? "error" : "ok",
+        message: isExpired
+          ? `${verification.profile.login}: the token expired on ${monoDate(verification.expiresAt ?? undefined)}.`
+          : `Connected as ${verification.profile.login} · ${verification.profile.publicRepos} public repositories.`,
+      })
+      toast.success(`Connected as ${verification.profile.login}`)
+      if (!isExpired) void loadRepos(1, { token: nextToken })
+    } catch (error) {
+      const message = error instanceof GitHubApiError ? error.explanation : "Could not verify the token."
+      const hint = error instanceof GitHubApiError ? error.hint : undefined
+      setTest({ kind: "error", message, hint })
+      if (record && userId) {
+        await putIntegration({
+          ...record,
+          status:
+            error instanceof GitHubApiError && error.kind === "unauthorized"
+              ? "expired"
+              : error instanceof GitHubApiError && error.kind === "forbidden"
+                ? "permission"
+                : "error",
+          lastError: message,
+          lastCheckedAt: Date.now(),
+        })
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const retest = async () => {
+    if (!record?.token) return
+    setTest({ kind: "running" })
+    try {
+      const verification = await verifyToken(record.token)
+      const now = Date.now()
+      await putIntegration({
+        ...record,
+        status: "connected",
+        lastCheckedAt: now,
+        lastError: undefined,
+        accountLabel: verification.profile.login,
+        account: {
+          login: verification.profile.login,
+          name: verification.profile.name,
+          avatarUrl: verification.profile.avatarUrl,
+          htmlUrl: verification.profile.htmlUrl,
+          type: verification.profile.type,
+          publicRepos: verification.profile.publicRepos,
+        },
+        tokenType: verification.tokenType,
+        scopes: verification.scopes,
+        expiresAt: verification.expiresAt,
+      })
+      setTest({
+        kind: "ok",
+        message: `Token is valid · ${verification.rateLimitRemaining ?? "?"} requests left this hour.`,
+      })
+      void loadRepos(1)
+    } catch (error) {
+      const message = error instanceof GitHubApiError ? error.explanation : "Check failed."
+      if (record) {
+        await putIntegration({
+          ...record,
+          status:
+            error instanceof GitHubApiError && error.kind === "unauthorized"
+              ? "expired"
+              : error instanceof GitHubApiError && error.kind === "forbidden"
+                ? "permission"
+                : "error",
+          lastError: message,
+          lastCheckedAt: Date.now(),
+        })
+      }
+      setTest({ kind: "error", message })
+    }
+  }
+
+  const disconnect = async () => {
+    if (!userId) return
+    await deleteIntegration(userId, "github")
+    setRepos([])
+    setTest({ kind: "idle" })
+    toast.success("GitHub disconnected and the token was deleted from this device.")
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Badge variant={connected ? "secondary" : "outline"} className="h-5 gap-1 text-[10px]">
+          {connected ? <CheckCircle2 className="size-2.5" /> : null}
+          {connected ? t("integration.connected") : record?.status === "expired" ? t("integration.status.expired") : t("integration.notConnected")}
+        </Badge>
+        {record?.tokenType && record.tokenType !== "unknown" ? (
+          <Badge variant="outline" className="h-5 text-[10px]">
+            {record.tokenType === "fine-grained" ? t("integration.fineGrained") : t("integration.classic")}
+          </Badge>
+        ) : null}
+        {record?.lastCheckedAt ? (
+          <span className="text-[10.5px] text-muted-foreground">
+            {t("integration.status.checking")} {monoDate(new Date(record.lastCheckedAt).toISOString())}
+          </span>
+        ) : null}
+      </div>
+
+      {record?.account ? (
+        <div className="flex min-w-0 items-start gap-2.5 rounded-lg border bg-card p-2.5">
+          {record.account.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- remote GitHub avatar
+            <img
+              src={record.account.avatarUrl}
+              alt={record.account.login}
+              className="size-9 shrink-0 rounded-full bg-muted object-cover"
+              loading="lazy"
+            />
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <a
+              href={record.account.htmlUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex max-w-full items-center gap-1 truncate text-[12.5px] font-medium text-primary underline-offset-2 hover:underline"
+            >
+              {record.account.login}
+              <ExternalLink className="size-3 shrink-0" />
+            </a>
+            <p className="truncate text-[11px] text-muted-foreground">
+              {[record.account.name, record.account.type, `${record.account.publicRepos ?? 0} public repos`]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10.5px] text-muted-foreground">
+              {record.scopes?.length ? (
+                <span>
+                  {t("integration.scopes")}: <span className="font-mono">{record.scopes.join(", ")}</span>
+                </span>
+              ) : null}
+              {record.expiresAt ? (
+                <span>
+                  {t("integration.expires")}: {monoDate(record.expiresAt)}
+                </span>
+              ) : null}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
+      {record?.lastError ? (
+        <Alert variant="destructive" className="py-2">
+          <AlertTriangle className="size-3.5" />
+          <AlertDescription className="text-[11px] leading-relaxed">{record.lastError}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <div className="space-y-2">
+        <Label htmlFor="github-token" className="text-[12px]">
+          {t("integration.githubToken")}
+        </Label>
+        <Input
+          id="github-token"
+          type="password"
+          value={token}
+          onChange={(event) => setToken(event.target.value)}
+          placeholder="github_pat_… / ghp_…"
+          className="h-9 w-full min-w-0 font-mono text-[12px]"
+          autoComplete="off"
+          spellCheck={false}
+        />
+        <p className="text-[10.5px] leading-relaxed text-muted-foreground">{t("integration.githubHint")}</p>
+        <p className="text-[10.5px] leading-relaxed text-muted-foreground">{t("integration.permissionsHint")}</p>
+        <p className="text-[10.5px] leading-relaxed text-muted-foreground">{t("integration.privateVisible")}</p>
+      </div>
+
+      {test.kind === "ok" ? (
+        <Alert className="py-2">
+          <CheckCircle2 className="size-3.5" />
+          <AlertDescription className="text-[11px]">{test.message}</AlertDescription>
+        </Alert>
+      ) : null}
+      {test.kind === "error" ? (
+        <Alert variant="destructive" className="py-2">
+          <AlertTriangle className="size-3.5" />
+          <AlertTitle className="text-[11.5px]">{t("integration.status.error")}</AlertTitle>
+          <AlertDescription className="text-[11px] leading-relaxed">
+            {test.message}
+            {test.hint ? <span className="mt-1 block opacity-90">{test.hint}</span> : null}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          className="h-8 min-w-0 flex-1 sm:flex-none"
+          disabled={!token.trim() || busy}
+          onClick={() => void save(token.trim())}
+        >
+          {busy ? <Loader2 className="size-3.5 animate-spin" /> : null}
+          {connected ? t("integration.reconnect") : t("common.connect")}
+        </Button>
+        {connected ? (
+          <>
+            <Button size="sm" variant="outline" className="h-8 min-w-0 flex-1 sm:flex-none" onClick={() => void retest()}>
+              <RefreshCw className="size-3.5" />
+              {t("integration.test")}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 min-w-0 gap-1 text-destructive hover:text-destructive"
+              onClick={() => void disconnect()}
+            >
+              <Trash2 className="size-3.5" />
+              {t("integration.remove")}
+            </Button>
+          </>
+        ) : null}
+      </div>
+
+      {connected ? (
+        <>
+          <Separator />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-[12px] font-medium">{t("integration.repos")}</h3>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-[11px]"
+                disabled={reposLoading}
+                onClick={() => void loadRepos(1)}
+              >
+                <RefreshCw className={reposLoading ? "size-3 animate-spin" : "size-3"} />
+              </Button>
+            </div>
+
+            {reposError ? (
+              <Alert variant="destructive" className="py-2">
+                <AlertTriangle className="size-3.5" />
+                <AlertDescription className="text-[11px] leading-relaxed">{reposError}</AlertDescription>
+              </Alert>
+            ) : null}
+
+            {reposLoading && repos.length === 0 ? (
+              <div className="space-y-1.5">
+                <p className="text-[11px] text-muted-foreground">{t("integration.reposLoading")}</p>
+                {[0, 1, 2].map((index) => (
+                  <Skeleton key={index} className="h-12 w-full rounded-md" />
+                ))}
+              </div>
+            ) : null}
+
+            {!reposLoading && !reposError && repos.length === 0 ? (
+              <p className="rounded-md border border-dashed p-3 text-[11px] leading-relaxed text-muted-foreground">
+                {t("integration.reposEmpty")}
+              </p>
+            ) : null}
+
+            <ul className="space-y-1.5">
+              {repos.map((repo) => (
+                <li key={repo.id} className="min-w-0 rounded-md border bg-card p-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <a
+                      href={repo.htmlUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="min-w-0 flex-1 truncate text-[12px] font-medium text-primary underline-offset-2 hover:underline"
+                    >
+                      {repo.fullName}
+                    </a>
+                    <Badge variant={repo.private ? "outline" : "secondary"} className="h-4 shrink-0 text-[9.5px]">
+                      {repo.private ? "private" : "public"}
+                    </Badge>
+                  </div>
+                  {repo.description ? (
+                    <p className="line-clamp-2 text-[10.5px] leading-relaxed text-muted-foreground">
+                      {repo.description}
+                    </p>
+                  ) : null}
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+                    {repo.language ? <span>{repo.language}</span> : null}
+                    <span>★ {repo.stars}</span>
+                    <span>{repo.defaultBranch}</span>
+                    <span>{monoDate(repo.updatedAt)}</span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+
+            {hasMore ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 w-full text-[11.5px]"
+                disabled={reposLoading}
+                onClick={() => void loadRepos(page + 1, { append: true })}
+              >
+                {t("integration.loadMore")}
+              </Button>
+            ) : null}
+          </div>
+        </>
+      ) : null}
     </div>
   )
 }
